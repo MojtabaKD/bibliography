@@ -23,24 +23,33 @@ def parse_amsrefs_entries(text):
 
     entries = []
 
+    balanced_brace_pattern = r'(?P<key>\w+)\s*=\s*{(?P<value>(?:[^{}]++|{(?&value)})*)}'
+
     for raw in raw_entries:
         # print(f'raw={raw}')
         doi_match = re.search(r'doi\s*=\s*{([^}]+)}', raw)
         vol_match = re.search(r'volume\s*=\s*{([^}]+)}', raw)
         # print(f'doi_match={doi_match}, vol_match={vol_match}')
 
-        title_match = re.findall(r'\btitle\s*=\s*{([^}]+)}', raw)
-        title = title_match[-1] if title_match else None
+        # title_match = re.findall(r'\btitle\s*=\s*{([^}]+)}', raw)
+        # title = title_match[-1] if title_match else None
 
-        doi = doi_match.group(1) if doi_match else None
-        vol = vol_match.group(1) if vol_match else None
-        num = memoir_number_from_doi(doi) if doi else None
+        fields = {}
 
-        if num:
-            entries.append({
-                "volume": int(vol),
-                "title": title,
-            })
+        for match in regex.finditer(balanced_brace_pattern, raw):
+            fields[match.group('key')] = match.group('value')
+
+        # doi = doi_match.group(1) if doi_match else None
+        # vol = vol_match.group(1) if vol_match else None
+
+        doi = fields.get('doi')
+        vol = fields.get('volume')
+        title = fields.get('title')
+
+        entries.append({
+            "volume": int(vol),
+            "title": title,
+        })
 
     return entries
 
